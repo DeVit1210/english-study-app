@@ -32,6 +32,11 @@ public class WordHandler {
         Mono<Word> word = mongoTemplate.findAndRemove(Query.query(Criteria.where("id").is(id)), Word.class);
         return ServerResponse.ok().body(word, Word.class);
     }
+
+    public Mono<ServerResponse> findWordById(ServerRequest request) {
+        Mono<Word> word = mongoTemplate.findById(request.pathVariable("id"), Word.class);
+        return ServerResponse.ok().body(word, Word.class);
+    }
 }
 
 
