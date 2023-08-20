@@ -18,15 +18,12 @@ public class Pair {
                 : this.difficultyValue > EASY_INITIAL_DIFFICULTY_VALUE ? Difficulty.MEDIUM
                 : Difficulty.EASY;
     }
-
     public String getMeaning() {
         return meaning;
     }
-
     public static int compare(Pair first, Pair second) {
         return Integer.compare(second.difficultyValue, first.difficultyValue);
     }
-
     public void setDifficulty(Difficulty difficulty) {
         switch (difficulty) {
             case EASY -> this.difficultyValue = EASY_INITIAL_DIFFICULTY_VALUE;
@@ -34,7 +31,6 @@ public class Pair {
             case HARD -> this.difficultyValue = HARD_INITIAL_DIFFICULTY_VALUE;
         }
     }
-
     public void increaseDifficulty() { this.difficultyValue++; }
     public void decreaseDifficulty() { this.difficultyValue--; }
 }

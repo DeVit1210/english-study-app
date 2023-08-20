@@ -16,7 +16,8 @@ public class WordEndpointConfiguration {
                         .GET("", wordHandler::getAllWords)
                         .GET("/{id}", wordHandler::findWordById)
                         .POST("", wordHandler::addWord)
-                        .DELETE("/{id}", wordHandler::deleteWord))
+                        .DELETE("/{id}", wordHandler::deleteWord)
+                        .PUT("/{id}", wordHandler::updateWord))
                 .build();
     }
 }

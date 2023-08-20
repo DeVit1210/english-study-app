@@ -1,23 +1,32 @@
 package com.example.englishstudying.word;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class WordHandler {
     private final ReactiveMongoTemplate mongoTemplate;
     public Mono<ServerResponse> addWord(ServerRequest request) {
-        return request.bodyToMono(Word.class)
+        log.info("addWord()");
+        Mono<WordAddingRequest> body = request.bodyToMono(WordAddingRequest.class);
+        log.info(body.toString());
+        return body
+                .flatMap(bodyMono -> Mono.just(new Word(bodyMono.russianMeaning(), bodyMono.englishMeanings())))
                 .flatMap(mongoTemplate::insert)
                 .flatMap(saved -> ServerResponse.created(URI.create("/api/v1/word/" + saved.getId())).build());
     }
@@ -36,6 +45,20 @@ public class WordHandler {
     public Mono<ServerResponse> findWordById(ServerRequest request) {
         Mono<Word> word = mongoTemplate.findById(request.pathVariable("id"), Word.class);
         return ServerResponse.ok().body(word, Word.class);
+    }
+
+    public Mono<ServerResponse> updateWord(ServerRequest request) {
+        Query query = Query.query(Criteria.where("id").is(request.pathVariable("id")));
+        return request.bodyToMono(WordAddingRequest.class)
+                .flatMap(bodyMono -> Mono.just(new Word(bodyMono.russianMeaning(), bodyMono.englishMeanings())))
+                .flatMap(word -> {
+                    Update updateDefinition = new Update()
+                            .set("russianMeaning", word.getRussianMeaning())
+                            .set("englishMeanings", word.getEnglishMeanings());
+                    FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(true);
+                    return mongoTemplate.findAndModify(query, updateDefinition, options, Word.class);
+                })
+                .flatMap(updatedWord -> ServerResponse.ok().body(Mono.just(updatedWord), Word.class));
     }
 }
 
