@@ -15,6 +15,7 @@ import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.function.Supplier;
 
 @Component
 @Slf4j
@@ -59,6 +60,17 @@ public class WordHandler {
                     return mongoTemplate.findAndModify(query, updateDefinition, options, Word.class);
                 })
                 .flatMap(updatedWord -> ServerResponse.ok().body(Mono.just(updatedWord), Word.class));
+    }
+
+    public Mono<Word> changeDifficulty(String id, String englishMeaning, boolean increase) {
+        return mongoTemplate.findById(id, Word.class)
+                .flatMap(word -> {
+                    Pair pair = Pair.find(word, p -> englishMeaning.equals(p.getMeaning()));
+                    if (increase) {
+                        pair.increaseDifficulty();
+                    } else pair.decreaseDifficulty();
+                    return Mono.just(word);
+                });
     }
 }
 
