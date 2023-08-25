@@ -2,12 +2,11 @@ package com.example.englishstudying.word;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +24,11 @@ public class Word {
         this.russianMeaning = russianMeaning;
         this.englishMeanings = englishMeanings.stream().map(Pair::from).toList();
     }
-    public Difficulty getDifficulty() {
 
+    public Difficulty getDifficulty() {
+        return englishMeanings.stream()
+                .max(Comparator.comparing(Pair::getDifficulty))
+                .orElseThrow()
+                .getDifficulty();
     }
 }
