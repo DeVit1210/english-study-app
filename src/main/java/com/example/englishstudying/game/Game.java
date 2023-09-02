@@ -2,16 +2,15 @@ package com.example.englishstudying.game;
 
 import com.example.englishstudying.game.settings.GameSettingsRequest;
 import com.example.englishstudying.game.settings.GameSettingsResolver;
+import com.example.englishstudying.word.Pair;
 import com.example.englishstudying.word.Word;
 import lombok.Data;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Document
 @Data
@@ -20,9 +19,7 @@ public class Game {
     private LocalDateTime time;
     private int totalAnswersQuantity;
     private int rightAnswersQuantity;
-    @Transient
-    private List<Word> wrongAnsweredWords;
-    @Transient
+    private Map<String, List<Pair>> wrongAnsweredWords;
     private WordListHolder wordListHolder;
 
     private Game(List<Word> words) {
@@ -30,6 +27,7 @@ public class Game {
         this.totalAnswersQuantity = 0;
         this.rightAnswersQuantity = 0;
         this.time = LocalDateTime.now();
+        this.wrongAnsweredWords = new HashMap<>();
         this.wordListHolder = new WordListHolder(words);
     }
     public double getResultInPercents() {
@@ -54,5 +52,10 @@ public class Game {
                 return iterator.next();
             } else throw new IllegalStateException("no words left!");
         }
+    }
+
+    public Mono<Game> addWrongAnsweredWord(Word word) {
+        this.wrongAnsweredWords.put(word.getRussianMeaning(), word.getEnglishMeanings());
+        return Mono.just(this);
     }
 }

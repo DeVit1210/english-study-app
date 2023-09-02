@@ -17,18 +17,17 @@ import java.util.List;
 public class AnswerVerifier {
     private final ReactiveMongoTemplate mongoTemplate;
     public Mono<CheckAnswerResponse> verify(CheckAnswerRequest request) {
-        final String currentAnswer = request.answer();
         return mongoTemplate
                 .findOne(Query.query(Criteria.where("russianMeaning").is(request.wordToGuess())), Word.class)
                 .flatMapIterable(Word::getEnglishMeanings)
                 .map(Pair::getMeaning)
                 .collectList()
-                .flatMap(meanings -> createResponseBuilder(meanings.contains(currentAnswer), meanings, currentAnswer))
+                .flatMap(meanings -> createResponseBuilder(request, meanings))
                 .map(AnswerResponseBuilder::build);
     }
 
-    private Mono<AnswerResponseBuilder> createResponseBuilder(boolean isAnswerCorrect, List<String> possibleAnswers,
-                                                              String currentAnswer) {
-        return Mono.just(AnswerResponseBuilder.builder(isAnswerCorrect, possibleAnswers, currentAnswer));
+    private Mono<AnswerResponseBuilder> createResponseBuilder(CheckAnswerRequest request, List<String> possibleAnswers) {
+        boolean isAnswerCorrect = possibleAnswers.contains(request.answer());
+        return Mono.just(AnswerResponseBuilder.builder(request, isAnswerCorrect, possibleAnswers));
     }
 }

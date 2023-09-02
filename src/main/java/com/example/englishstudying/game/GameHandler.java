@@ -1,26 +1,29 @@
 package com.example.englishstudying.game;
 
+import com.example.englishstudying.game.answer.AnswerVerifier;
+import com.example.englishstudying.game.answer.CheckAnswerRequest;
+import com.example.englishstudying.game.answer.CheckAnswerResponse;
+import com.example.englishstudying.game.answer.LevelModifier;
 import com.example.englishstudying.game.settings.GameSettingsRequest;
 import com.example.englishstudying.game.settings.GameSettingsResolver;
-import com.example.englishstudying.word.Word;
 import com.example.englishstudying.word.WordHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.logging.Level;
 
 @Component
 @RequiredArgsConstructor
 public class GameHandler {
     private final ReactiveMongoTemplate mongoTemplate;
-    private final WordHandler wordHandler;
     private final GameSettingsResolver settingsResolver;
+    private final AnswerVerifier answerVerifier;
+    private final LevelModifier levelModifier;
     public Mono<ServerResponse> startGame(ServerRequest request) {
         return request.bodyToMono(GameSettingsRequest.class)
                 .flatMap(settingRequest -> Mono.just(Game.from(settingsResolver, settingRequest)))
@@ -42,27 +45,9 @@ public class GameHandler {
     }
 
     public Mono<ServerResponse> checkAnswer(ServerRequest request) {
-        Mono<Boolean> booleanMono = request.bodyToMono(CheckAnswerRequest.class)
-                .flatMap(answerRequest -> mongoTemplate
-                        .findOne(Query.query(Criteria.where(answerRequest.wordToGuess())), Word.class)
-                        .map(w -> w.getEnglishMeanings()
-                                .stream()
-                                .anyMatch(pair -> pair.getMeaning().equals(answerRequest.answer()))
-                        )
-                );
-
-        // TODO: temporal response, create CheckAnswerResponse record,
-        //  which will notify the user whether the answer right or not
-        //  and show the list of all different possible answers
-
-        return ServerResponse.ok().body("Answer is right: " + booleanMono, String.class);
+        return request.bodyToMono(CheckAnswerRequest.class)
+                .flatMap(answerVerifier::verify)
+                .flatMap(levelModifier::modifyDifficulty)
+                .flatMap(response -> ServerResponse.ok().body(response, CheckAnswerResponse.class));
     }
-
-
-//    private void changeDifficulty(boolean increased) {
-//        String id = "any";
-//        String englishMeaning = "any";
-//        wordHandler.changeDifficulty(id, englishMeaning, increased)
-//                .flatMap(mongoTemplate::save);
-//    }
 }

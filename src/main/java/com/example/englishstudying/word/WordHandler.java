@@ -60,8 +60,9 @@ public class WordHandler {
                 .flatMap(updatedWord -> ServerResponse.ok().body(Mono.just(updatedWord), Word.class));
     }
 
-    public Mono<Word> changeDifficulty(String id, String englishMeaning, boolean increase) {
-        return mongoTemplate.findById(id, Word.class)
+    public Mono<Word> changeDifficulty(String russianMeaning, String englishMeaning, boolean increase) {
+        Query query = Query.query(Criteria.where("russianMeaning").is(russianMeaning));
+        return mongoTemplate.findOne(query, Word.class)
                 .flatMap(word -> {
                     Pair pair = Pair.find(word, p -> englishMeaning.equals(p.getMeaning()));
                     if (increase) {
