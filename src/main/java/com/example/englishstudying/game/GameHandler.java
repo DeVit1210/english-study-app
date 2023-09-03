@@ -4,9 +4,10 @@ import com.example.englishstudying.game.answer.AnswerVerifier;
 import com.example.englishstudying.game.answer.CheckAnswerRequest;
 import com.example.englishstudying.game.answer.CheckAnswerResponse;
 import com.example.englishstudying.game.answer.LevelModifier;
+import com.example.englishstudying.game.finish.FinishGameRequest;
+import com.example.englishstudying.game.finish.FinishGameResponse;
 import com.example.englishstudying.game.settings.GameSettingsRequest;
 import com.example.englishstudying.game.settings.GameSettingsResolver;
-import com.example.englishstudying.word.WordHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,6 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.logging.Level;
 
 @Component
 @RequiredArgsConstructor
@@ -36,11 +36,8 @@ public class GameHandler {
 
     public Mono<ServerResponse> requestWord(ServerRequest request) {
         Mono<GameResponse> gameResponse = mongoTemplate.findById(request.pathVariable("id"), Game.class)
-                .flatMap(game -> Mono.just(new GameResponse(
-                        game.getRandomWord().getRussianMeaning(),
-                        game.getTotalAnswersQuantity(),
-                        game.getRightAnswersQuantity()))
-                );
+                .flatMap(game -> Mono.just(new GameResponse(game.getRandomWord().getRussianMeaning())))
+                .onErrorResume(throwable -> Mono.just(new GameResponse("")));
         return ServerResponse.ok().body(gameResponse, GameResponse.class);
     }
 
@@ -49,5 +46,19 @@ public class GameHandler {
                 .flatMap(answerVerifier::verify)
                 .flatMap(levelModifier::modifyDifficulty)
                 .flatMap(response -> ServerResponse.ok().body(response, CheckAnswerResponse.class));
+    }
+
+    public Mono<ServerResponse> finishGame(ServerRequest request) {
+        return mongoTemplate.findById(request.pathVariable("id"), Game.class)
+                .flatMap(game -> request.bodyToMono(FinishGameRequest.class)
+                            .map(finishGameRequest -> {
+                                game.setRightAnswersQuantity(finishGameRequest.rightAnswersQuantity());
+                                game.setTotalAnswersQuantity(finishGameRequest.totalWordsQuantity());
+                                return game;
+                            })
+                )
+                .flatMap(mongoTemplate::save)
+                .map(savedGame -> new FinishGameResponse(savedGame.getWrongAnsweredWords(), savedGame.getResultInPercents()))
+                .flatMap(finishGameResponse -> ServerResponse.ok().body(finishGameResponse, FinishGameResponse.class));
     }
 }

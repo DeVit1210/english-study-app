@@ -19,7 +19,7 @@ public class Game {
     private LocalDateTime time;
     private int totalAnswersQuantity;
     private int rightAnswersQuantity;
-    private Map<String, List<Pair>> wrongAnsweredWords;
+    private Map<String, List<String>> wrongAnsweredWords;
     private WordListHolder wordListHolder;
 
     private Game(List<Word> words) {
@@ -55,7 +55,10 @@ public class Game {
     }
 
     public Mono<Game> addWrongAnsweredWord(Word word) {
-        this.wrongAnsweredWords.put(word.getRussianMeaning(), word.getEnglishMeanings());
+        this.wrongAnsweredWords.put(
+                word.getRussianMeaning(),
+                word.getEnglishMeanings().stream().map(Pair::getMeaning).toList()
+        );
         return Mono.just(this);
     }
 }
