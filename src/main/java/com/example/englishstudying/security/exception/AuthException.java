@@ -1,4 +1,4 @@
-package com.example.englishstudying.security;
+package com.example.englishstudying.security.exception;
 
 public class AuthException extends ApiException {
     public AuthException(String message, String errorCode) {

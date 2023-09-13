@@ -1,4 +1,4 @@
-package com.example.englishstudying.security;
+package com.example.englishstudying.security.exception;
 
 public class ApiException extends RuntimeException {
     protected String errorCode;

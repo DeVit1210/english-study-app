@@ -1,5 +1,6 @@
 package com.example.englishstudying.security;
 
+import com.example.englishstudying.security.exception.AuthException;
 import com.example.englishstudying.user.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
