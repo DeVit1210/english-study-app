@@ -25,7 +25,9 @@ public class SecurityService {
     @Value("${jwt.expiration}")
     private int expirationInSeconds;
     private TokenDetails generateToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
+        Map<String, Object> claims = new HashMap<>() {{
+            put("username", user.getUsername());
+        }};
         return generateToken(claims, user.getId());
     }
     private TokenDetails generateToken(Map<String, Object> claims, String subject) {
