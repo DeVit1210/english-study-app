@@ -2,6 +2,7 @@ package com.example.englishstudying.security;
 
 import com.example.englishstudying.security.exception.AuthException;
 import com.example.englishstudying.user.User;
+import com.example.englishstudying.user.dto.AuthenticationRequest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,9 @@ public class SecurityService {
                 .build();
 
     }
-    private Mono<TokenDetails> authenticate(String username, String password) {
+    public Mono<TokenDetails> authenticate(AuthenticationRequest request) {
+        final String username = request.username();
+        final String password = request.password();
         return mongoTemplate
                 .findOne(Query.query(Criteria.where("username").is(username)), User.class)
                 .flatMap(user -> this.mapFoundUser(user, password))
