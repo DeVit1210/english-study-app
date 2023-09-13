@@ -15,11 +15,10 @@ import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
-public class UserService {
+public class UserHandler {
     private final SecurityService securityService;
     private final ReactiveMongoTemplate mongoTemplate;
     private final UserMapper userMapper;
-
     public Mono<ServerResponse> login(ServerRequest request) {
         return request.bodyToMono(AuthenticationRequest.class)
                 .flatMap(securityService::authenticate)
@@ -39,5 +38,4 @@ public class UserService {
                         .build()
                 );
     }
-
 }
